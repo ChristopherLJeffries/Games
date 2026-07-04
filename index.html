@@ -1,82 +1,155 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Simple Sonic/Mario Game</title>
+<title>Gorilla City Run</title>
 <style>
-  body { margin: 0; overflow: hidden; background: #87CEEB; }
-  #game {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    background: #87CEEB;
-  }
-  #player { 
-    position: absolute;
-    width: 40px;
-    height: 40px;
-    background: red;
-    bottom: 100px;
-    left: 50px;
-    border-radius: 8px;
-  }
-  #ground {
-    position: absolute;
-    width: 100%;
-    height: 100px;
-    background: green;
-    bottom: 0;
-  }
-  #ring {
-    position: absolute;
-    width: 30px;
-    height: 30px;
-    border: 5px solid gold;
-    border-radius: 50%;
-    left: 300px;
-    bottom: 140px;
-  }
+  body { margin: 0; overflow: hidden; background: #228B22; }
+  canvas { display: block; }
 </style>
 </head>
 <body>
 
-<div id="game">
-  <div id="player"></div>
-  <div id="ground"></div>
-  <div id="ring"></div>
-</div>
+<canvas id="game"></canvas>
 
 <script>
-let player = document.getElementById("player");
-let ring = document.getElementById("ring");
-let yVelocity = 0;
-let jumping = false;
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// GAME VARIABLES
+let gorilla = { x: 100, y: canvas.height - 150, w: 60, h: 60, vy: 0, jumping: false };
+let bananas = [];
+let mushrooms = [];
+let fires = [];
+let jungle = true;
+let timer = 60;
+
+// SPAWN BANANAS
+function spawnBanana() {
+  bananas.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * (canvas.height - 200),
+    w: 30,
+    h: 30
+  });
+}
+
+// SPAWN MUSHROOMS
+function spawnMushroom() {
+  mushrooms.push({
+    x: Math.random() * canvas.width,
+    y: canvas.height - 120,
+    w: 40,
+    h: 40
+  });
+}
+
+// FIREBALL
+function spitFire() {
+  fires.push({
+    x: gorilla.x + gorilla.w,
+    y: gorilla.y + gorilla.h / 2,
+    w: 20,
+    h: 10,
+    speed: 10
+  });
+}
+
+// CONTROLS
 document.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowRight") player.style.left = (player.offsetLeft + 20) + "px";
-  if (e.key === "ArrowLeft") player.style.left = (player.offsetLeft - 20) + "px";
-  if (e.key === " " && !jumping) {
-    jumping = true;
-    yVelocity = 20;
+  if (e.key === "ArrowRight") gorilla.x += 20;
+  if (e.key === "ArrowLeft") gorilla.x -= 20;
+  if (e.key === " " && !gorilla.jumping) {
+    gorilla.jumping = true;
+    gorilla.vy = -20;
   }
+  if (e.key === "f") spitFire();
 });
 
+// GAME LOOP
 function gameLoop() {
-  // gravity
-  yVelocity -= 1;
-  player.style.bottom = Math.max(100, player.offsetTop + yVelocity) + "px";
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  if (player.offsetTop <= 100) jumping = false;
+  // BACKGROUND TRANSITION
+  if (timer <= 30) jungle = false;
+  ctx.fillStyle = jungle ? "#228B22" : "#444";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // ring collection
-  let p = player.getBoundingClientRect();
-  let r = ring.getBoundingClientRect();
-  if (!(p.right < r.left || p.left > r.right || p.bottom < r.top || p.top > r.bottom)) {
-    ring.style.display = "none";
-    alert("You collected a ring!");
+  // GROUND
+  ctx.fillStyle = jungle ? "#006400" : "#222";
+  ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+
+  // GORILLA
+  ctx.fillStyle = "#654321";
+  ctx.fillRect(gorilla.x, gorilla.y, gorilla.w, gorilla.h);
+
+  // GRAVITY
+  gorilla.vy += 1;
+  gorilla.y += gorilla.vy;
+  if (gorilla.y >= canvas.height - 160) {
+    gorilla.y = canvas.height - 160;
+    gorilla.jumping = false;
   }
+
+  // BANANAS
+  ctx.fillStyle = "yellow";
+  bananas.forEach((b, i) => {
+    ctx.fillRect(b.x, b.y, b.w, b.h);
+
+    // COLLISION
+    if (gorilla.x < b.x + b.w &&
+        gorilla.x + gorilla.w > b.x &&
+        gorilla.y < b.y + b.h &&
+        gorilla.y + gorilla.h > b.y) {
+      bananas.splice(i, 1);
+    }
+  });
+
+  // MUSHROOMS
+  ctx.fillStyle = "red";
+  mushrooms.forEach((m, i) => {
+    ctx.fillRect(m.x, m.y, m.w, m.h);
+
+    // SMASH
+    if (gorilla.x < m.x + m.w &&
+        gorilla.x + gorilla.w > m.x &&
+        gorilla.y < m.y + m.h &&
+        gorilla.y + gorilla.h > m.y) {
+      mushrooms.splice(i, 1);
+    }
+  });
+
+  // FIREBALLS
+  ctx.fillStyle = "orange";
+  fires.forEach((f, i) => {
+    f.x += f.speed;
+    ctx.fillRect(f.x, f.y, f.w, f.h);
+
+    // HIT MUSHROOM
+    mushrooms.forEach((m, j) => {
+      if (f.x < m.x + m.w &&
+          f.x + f.w > m.x &&
+          f.y < m.y + m.h &&
+          f.y + f.h > m.y) {
+        mushrooms.splice(j, 1);
+        fires.splice(i, 1);
+      }
+    });
+  });
+
+  // TIMER
+  ctx.fillStyle = "white";
+  ctx.font = "30px Arial";
+  ctx.fillText("Time: " + timer, 20, 40);
 
   requestAnimationFrame(gameLoop);
 }
+
+setInterval(() => timer--, 1000);
+setInterval(spawnBanana, 2000);
+setInterval(spawnMushroom, 3000);
 
 gameLoop();
 </script>
