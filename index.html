@@ -122,7 +122,8 @@ function gameLoop() {
 
   // GORILLA (realistic block placeholder)
   ctx.fillStyle = "#4a2c2a";
-  ctx.fillRect(gorilla.x, gorilla.y, gorilla.w, gorilla.h);
+  ctx.ctx.drawImage(gorillaImg, gorilla.x, gorilla.y, gorilla.w, gorilla.h);
+
 
   // GRAVITY
   gorilla.vy += 1.5;
