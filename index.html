@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Simple Sonic/Mario Game</title>
+<style>
+  body { margin: 0; overflow: hidden; background: #87CEEB; }
+  #game {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background: #87CEEB;
+  }
+  #player {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background: red;
+    bottom: 100px;
+    left: 50px;
+    border-radius: 8px;
+  }
+  #ground {
+    position: absolute;
+    width: 100%;
+    height: 100px;
+    background: green;
+    bottom: 0;
+  }
+  #ring {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border: 5px solid gold;
+    border-radius: 50%;
+    left: 300px;
+    bottom: 140px;
+  }
+</style>
+</head>
+<body>
+
+<div id="game">
+  <div id="player"></div>
+  <div id="ground"></div>
+  <div id="ring"></div>
+</div>
+
+<script>
+let player = document.getElementById("player");
+let ring = document.getElementById("ring");
+let yVelocity = 0;
+let jumping = false;
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowRight") player.style.left = (player.offsetLeft + 20) + "px";
+  if (e.key === "ArrowLeft") player.style.left = (player.offsetLeft - 20) + "px";
+  if (e.key === " " && !jumping) {
+    jumping = true;
+    yVelocity = 20;
+  }
+});
+
+function gameLoop() {
+  // gravity
+  yVelocity -= 1;
+  player.style.bottom = Math.max(100, player.offsetTop + yVelocity) + "px";
+
+  if (player.offsetTop <= 100) jumping = false;
+
+  // ring collection
+  let p = player.getBoundingClientRect();
+  let r = ring.getBoundingClientRect();
+  if (!(p.right < r.left || p.left > r.right || p.bottom < r.top || p.top > r.bottom)) {
+    ring.style.display = "none";
+    alert("You collected a ring!");
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+
+</body>
+</html>
