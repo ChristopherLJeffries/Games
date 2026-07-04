@@ -1,0 +1,6 @@
+// Load gorilla sprite
+const gorillaImg = new Image();
+gorillaImg.src = "gorilla.png";
+
+// Draw gorilla
+ctx.drawImage(gorillaImg, gorilla.x, gorilla.y, gorilla.w, gorilla.h);
