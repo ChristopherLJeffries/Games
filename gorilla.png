@@ -1,9 +1,0 @@
-// Load gorilla sprite
-const gorillaImg = new Image();
-gorillaImg.src = "Copilot_20260704_022408.png"; // your uploaded sprite
-
-// Draw gorilla
-ctx.drawImage(gorillaImg, gorilla.x, gorilla.y, gorilla.w, gorilla.h);
-
-const gorillaImg = new Image();
-gorillaImg.src = "Copilot_20260704_022408.png";
