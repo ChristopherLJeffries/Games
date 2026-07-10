@@ -136,6 +136,12 @@ function collide(a, b) {
 // MAIN GAME LOOP
 // =========================
 function loop(timestamp) {
+  if (!lastTime) {
+    lastTime = timestamp;
+    requestAnimationFrame(loop);
+    return;
+  }
+
   const delta = (timestamp - lastTime) / 1000;
   lastTime = timestamp;
 
@@ -143,7 +149,6 @@ function loop(timestamp) {
   timeLeft -= delta;
   if (timeLeft <= 30) inJungle = false;
 
-  // GAME OVER
   if (timeLeft <= 0) {
     drawGameOver();
     return;
@@ -184,7 +189,6 @@ function loop(timestamp) {
     ctx.scale(-1, 1);
     ctx.translate(-gorilla.x - gorilla.w / 2, 0);
   }
-
   ctx.drawImage(IMAGES.gorilla, gorilla.x, gorilla.y, gorilla.w, gorilla.h);
   ctx.restore();
 
