@@ -3,54 +3,11 @@
 <head>
 <title>Gorilla City Run</title>
 <style>
-  body { margin: 0; overflow: hidden; background: #000; font-family: Arial, sans-serif; }
+  body { margin: 0; overflow: hidden; background: #000; }
   canvas { display: block; }
-  #ui {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    color: white;
-    z-index: 10;
-  }
-  #startScreen, #gameOverScreen {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.8);
-    color: white;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 20;
-  }
-  button {
-    padding: 10px 20px;
-    margin-top: 20px;
-    font-size: 18px;
-    cursor: pointer;
-  }
 </style>
 </head>
 <body>
-
-<div id="ui">
-  <div id="hudTime">Time: 60</div>
-  <div id="hudScore">Score: 0</div>
-  <div id="hudHealth">Health: 100</div>
-</div>
-
-<div id="startScreen">
-  <h1>Gorilla City Run</h1>
-  <p>Arrow keys to move, Space to jump, F to spit fire.</p>
-  <button id="startBtn">Start Game</button>
-</div>
-
-<div id="gameOverScreen" style="display:none;">
-  <h1 id="gameOverText">GAME OVER</h1>
-  <p id="finalScoreText">Final Score: 0</p>
-  <button id="restartBtn">Restart</button>
-</div>
 
 <canvas id="game"></canvas>
 
@@ -63,16 +20,26 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// UI
-const hudTime = document.getElementById("hudTime");
-const hudScore = document.getElementById("hudScore");
-const hudHealth = document.getElementById("hudHealth");
-const startScreen = document.getElementById("startScreen");
-const startBtn = document.getElementById("startBtn");
-const gameOverScreen = document.getElementById("gameOverScreen");
-const gameOverText = document.getElementById("gameOverText");
-const finalScoreText = document.getElementById("finalScoreText");
-const restartBtn = document.getElementById("restartBtn");
+// =========================
+// LOAD IMAGES
+// =========================
+const gorillaImg = new Image();
+gorillaImg.src = "gorilla.png";
+
+const bananaImg = new Image();
+bananaImg.src = "banana.png";
+
+const mushroomImg = new Image();
+mushroomImg.src = "mushroom.png";
+
+const fireImg = new Image();
+fireImg.src = "fireball.png";
+
+const jungleBg = new Image();
+jungleBg.src = "jungle_bg.png";
+
+const cityBg = new Image();
+cityBg.src = "city_bg.png";
 
 // =========================
 // GAME VARIABLES
@@ -80,18 +47,16 @@ const restartBtn = document.getElementById("restartBtn");
 let timer = 60;
 let score = 0;
 let jungle = true;
-let health = 100;
-let gameRunning = false;
-let bossActive = false;
+let bgOffset = 0;
 
 // =========================
-// GORILLA SETUP
+// GORILLA
 // =========================
 let gorilla = {
   x: 150,
   y: canvas.height - 220,
-  w: 100,
-  h: 100,
+  w: 120,
+  h: 120,
   vy: 0,
   jumping: false,
   speed: 10,
@@ -101,83 +66,21 @@ let gorilla = {
 };
 
 // =========================
-// IMAGES
-// =========================
-// Replace these src paths with your actual files
-const gorillaRunImg = new Image();
-gorillaRunImg.src = "gorilla_run.png"; // sprite sheet: multiple frames horizontally
-
-const gorillaJumpImg = new Image();
-gorillaJumpImg.src = "gorilla_jump.png";
-
-const fireImg = new Image();
-fireImg.src = "fireball.png";
-
-const bananaImg = new Image();
-bananaImg.src = "banana_spin.png"; // sprite sheet
-
-const mushroomImg = new Image();
-mushroomImg.src = "mushroom_walk.png"; // sprite sheet
-
-const jungleBgImg = new Image();
-jungleBgImg.src = "jungle_bg.png";
-
-const cityBgImg = new Image();
-cityBgImg.src = "city_bg.png";
-
-const bossImg = new Image();
-bossImg.src = "robot_gorilla_boss.png";
-
-// Background scroll
-let bgOffset = 0;
-
-// =========================
 // OBJECT ARRAYS
 // =========================
 let bananas = [];
 let mushrooms = [];
 let fires = [];
-let bossProjectiles = [];
-
-// =========================
-// SOUNDS
-// =========================
-const jungleMusic = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_7c7e90c9b7.mp3?filename=jungle-ambient-20468.mp3");
-jungleMusic.loop = true;
-
-const cityMusic = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_4b7e90c9b7.mp3?filename=city-night-ambience-20469.mp3");
-cityMusic.loop = true;
-
-const jumpSound = new Audio("https://cdn.pixabay.com/download/audio/2021/09/20/audio_4f3e.mp3?filename=jump-8021.mp3");
-const fireSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_3c7e90c9b7.mp3?filename=fireball-20470.mp3");
-const smashSound = new Audio("https://cdn.pixabay.com/download/audio/2021/09/20/audio_3f3e.mp3?filename=smash-8022.mp3");
-const collectSound = new Audio("https://cdn.pixabay.com/download/audio/2021/09/20/audio_2f3e.mp3?filename=collect-8023.mp3");
-const hitSound = new Audio("https://cdn.pixabay.com/download/audio/2021/09/20/audio_1f3e.mp3?filename=hit-8024.mp3");
-
-// =========================
-// BOSS
-// =========================
-let boss = {
-  x: canvas.width - 300,
-  y: canvas.height - 260,
-  w: 200,
-  h: 200,
-  health: 200,
-  active: false,
-  fireCooldown: 0
-};
 
 // =========================
 // SPAWN FUNCTIONS
 // =========================
 function spawnBanana() {
   bananas.push({
-    x: Math.random() * (canvas.width - 100) + 50,
-    y: Math.random() * (canvas.height - 300) + 100,
+    x: Math.random() * (canvas.width - 100),
+    y: Math.random() * (canvas.height - 300),
     w: 40,
-    h: 40,
-    frame: 0,
-    frameTime: 0
+    h: 40
   });
 }
 
@@ -187,14 +90,11 @@ function spawnMushroom() {
     y: canvas.height - 180,
     w: 60,
     h: 60,
-    dx: (Math.random() * 2) + 2,
-    frame: 0,
-    frameTime: 0
+    dx: (Math.random() * 2) + 2
   });
 }
 
 function spitFire() {
-  fireSound.play();
   fires.push({
     x: gorilla.x + (gorilla.facingRight ? gorilla.w : -20),
     y: gorilla.y + gorilla.h / 2,
@@ -204,22 +104,10 @@ function spitFire() {
   });
 }
 
-function bossSpitFire() {
-  bossProjectiles.push({
-    x: boss.x,
-    y: boss.y + boss.h / 2,
-    w: 30,
-    h: 15,
-    speed: -10
-  });
-}
-
 // =========================
 // CONTROLS
 // =========================
 document.addEventListener("keydown", (e) => {
-  if (!gameRunning) return;
-
   if (e.key === "ArrowRight") {
     gorilla.x += gorilla.speed;
     gorilla.facingRight = true;
@@ -228,20 +116,17 @@ document.addEventListener("keydown", (e) => {
     gorilla.x -= gorilla.speed;
     gorilla.facingRight = false;
   }
-
   if (e.key === " " && !gorilla.jumping) {
     gorilla.jumping = true;
     gorilla.vy = -25;
-    jumpSound.play();
   }
-
   if (e.key === "f") spitFire();
 });
 
 // =========================
-// COLLISION HELPER
+// COLLISION
 // =========================
-function rectCollide(a, b) {
+function collide(a, b) {
   return (
     a.x < b.x + b.w &&
     a.x + a.w > b.x &&
@@ -254,27 +139,17 @@ function rectCollide(a, b) {
 // GAME LOOP
 // =========================
 function gameLoop() {
-  if (!gameRunning) {
-    requestAnimationFrame(gameLoop);
-    return;
-  }
-
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // BACKGROUND SCROLL
   bgOffset -= jungle ? 1 : 2;
-  let bgImg = jungle ? jungleBgImg : cityBgImg;
-  let bgWidth = canvas.width;
-  ctx.drawImage(bgImg, bgOffset, 0, bgWidth, canvas.height);
-  ctx.drawImage(bgImg, bgOffset + bgWidth, 0, bgWidth, canvas.height);
-  if (bgOffset <= -bgWidth) bgOffset = 0;
+  let bg = jungle ? jungleBg : cityBg;
+  ctx.drawImage(bg, bgOffset, 0, canvas.width, canvas.height);
+  ctx.drawImage(bg, bgOffset + canvas.width, 0, canvas.width, canvas.height);
+  if (bgOffset <= -canvas.width) bgOffset = 0;
 
-  // BACKGROUND SWITCH
-  if (timer <= 30 && jungle) {
-    jungle = false;
-    jungleMusic.pause();
-    cityMusic.play();
-  }
+  // SWITCH TO CITY
+  if (timer <= 30) jungle = false;
 
   // GROUND
   ctx.fillStyle = jungle ? "#145214" : "#222";
@@ -289,11 +164,11 @@ function gameLoop() {
     gorilla.jumping = false;
   }
 
-  // GORILLA ANIMATION
-  gorilla.frameTime += 1;
-  if (gorilla.frameTime > 5) {
+  // SIMPLE ANIMATION
+  gorilla.frameTime++;
+  if (gorilla.frameTime > 8) {
     gorilla.frameTime = 0;
-    gorilla.frame = (gorilla.frame + 1) % 4; // assume 4 frames
+    gorilla.frame = (gorilla.frame + 1) % 2;
   }
 
   // DRAW GORILLA
@@ -304,24 +179,88 @@ function gameLoop() {
     ctx.translate(-gorilla.x - gorilla.w / 2, 0);
   }
 
-  let sprite = gorilla.jumping ? gorillaJumpImg : gorillaRunImg;
-  let frameWidth = sprite.width / 4 || gorilla.w;
-  ctx.drawImage(
-    sprite,
-    gorilla.frame * frameWidth,
-    0,
-    frameWidth,
-    sprite.height,
-    gorilla.x,
-    gorilla.y,
-    gorilla.w,
-    gorilla.h
-  );
+  if (gorilla.jumping) {
+    ctx.drawImage(gorillaImg, gorilla.x, gorilla.y, gorilla.w * 1.05, gorilla.h * 1.05);
+  } else if (gorilla.frame === 0) {
+    ctx.drawImage(gorillaImg, gorilla.x, gorilla.y, gorilla.w, gorilla.h);
+  } else {
+    ctx.drawImage(gorillaImg, gorilla.x, gorilla.y + 5, gorilla.w, gorilla.h * 0.9);
+  }
+
   ctx.restore();
 
   // BANANAS
   bananas.forEach((b, i) => {
-    b.frameTime += 1;
-    if (b.frameTime > 5) {
-      b.frameTime
+    ctx.drawImage(bananaImg, b.x, b.y, b.w, b.h);
+    if (collide(gorilla, b)) {
+      bananas.splice(i, 1);
+      score += 10;
+    }
+  });
 
+  // MUSHROOMS
+  mushrooms.forEach((m, i) => {
+    m.x += m.dx;
+    if (m.x > canvas.width + 60) m.x = -60;
+
+    ctx.drawImage(mushroomImg, m.x, m.y, m.w, m.h);
+
+    if (collide(gorilla, m)) {
+      mushrooms.splice(i, 1);
+      score += 20;
+    }
+  });
+
+  // FIREBALLS
+  fires.forEach((f, i) => {
+    f.x += f.speed;
+    ctx.drawImage(fireImg, f.x, f.y, f.w, f.h);
+
+    mushrooms.forEach((m, j) => {
+      if (collide(f, m)) {
+        mushrooms.splice(j, 1);
+        fires.splice(i, 1);
+        score += 30;
+      }
+    });
+
+    if (f.x < -100 || f.x > canvas.width + 100) fires.splice(i, 1);
+  });
+
+  // HUD
+  ctx.fillStyle = "white";
+  ctx.font = "30px Arial";
+  ctx.fillText("Time: " + timer, 20, 40);
+  ctx.fillText("Score: " + score, 20, 80);
+
+  // TIMER
+  if (timer <= 0) {
+    ctx.fillStyle = "black";
+    ctx.globalAlpha = 0.7;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle = "white";
+    ctx.font = "60px Arial";
+    ctx.fillText("GAME OVER", canvas.width / 2 - 150, canvas.height / 2);
+    ctx.font = "40px Arial";
+    ctx.fillText("Final Score: " + score, canvas.width / 2 - 130, canvas.height / 2 + 60);
+    return;
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+// =========================
+// TIMERS
+// =========================
+setInterval(() => timer--, 1000);
+setInterval(spawnBanana, 2000);
+setInterval(spawnMushroom, 3000);
+
+// START GAME
+gameLoop();
+</script>
+
+</body>
+</html>
